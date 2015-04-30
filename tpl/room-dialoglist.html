@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--#include virtual="./tpl/header.shtml"-->
+    <link rel="stylesheet" href="js/artDialogV6/css/ui-dialog.css">
+    <script type="text/javascript" src="js/artDialogV6/dist/dialog-plus-min.js"></script>
+    <style type="text/css">
+
+
+        .d-dialog-table{
+            width: 550px;
+            font-size: 14px;
+            text-align:center;
+
+            border-collapse: collapse;
+            border-spacing: 2px;
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+        }
+        .d-dialog-table thead{font-weight: bold;background: #}
+        .d-dialog-table td{
+            border: 1px solid #ccc;
+            height: 30px;
+
+        }
+
+        .d-dialog-table tr td:nth-child(1){
+            /*border-right: 1px solid #ccc;*/
+
+        }
+
+
+    </style>
+</head>
+<body>
+
+<table class="d-dialog-table">
+    <thead>
+    <tr>
+        <td>开播时间</td>
+        <td>时常</td>
+        <td>费用</td>
+        <td>操作</td>
+    </tr>
+    </thead>
+    <tbody>
+<?php foreach($rooms as $room){
+$fee = $room['roomtid']==3 ? $room['tickets'].'门票/人' : $room['points'].'钻石';
+echo <<<EOF
+    <tr>
+        <td>{$room['starttime']}</td>
+        <td>{$room['duration']}</td>
+        <td>{$fee}</td>
+        <td><a rel="{$room['id']}" class="set-button" href="javascript:void(0);">修改</a> <a rel="{$room['id']}" class="del-button" href="javascript:void(0);">删除</a></td>
+    </tr>
+EOF;
+}?>
+    </tbody>
+</table>
+<script type="text/javascript">
+    $(function() {
+       $(".set-button").click(function(){
+           top.dialog({
+               title: '修改房间',
+               url: '/index.php?do=room-setduration&id='+$(this).attr('rel')
+           }).show(this);
+
+       }) ;
+
+       $(".del-button").click(function(){
+           var $this = $(this);
+            top.dialog({
+                width:200,
+                title:'警告',
+                content:'确认删除该条记录?',
+                okValue: '确定',
+                cancelValue: '取消',
+                ok:function(){
+                    $.getJSON('/index.php?do=room-delduration',{'id':$this.attr('rel')},function(json){
+                       alert(json);
+                    });
+                },
+                cancel:function(){}
+            }).show(this);
+       });
+
+
+    });
+</script>
+</body>
+</html>

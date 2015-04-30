@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--#include virtual="./tpl/header.shtml"-->
+    <link rel="stylesheet" href="js/artDialogV6/css/ui-dialog.css">
+    <script type="text/javascript" src="js/artDialogV6/dist/dialog-plus-min.js"></script>
+    <style type="text/css">
+        .details{text-decoration: none;}
+
+        .d-dialog-table{
+            border-collapse: collapse;
+            border-spacing: 2px;
+            border-left: 1px solid #ccc;
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+        }
+        .d-dialog-table td{
+            border-top: 1px solid #ccc;
+
+        }
+
+        .d-dialog-table tr td:nth-child(1){
+            border-right: 1px solid #ccc;
+
+        }
+
+    </style>
+</head>
+
+<body>
+<!--#include virtual="./tpl/menu.php" -->
+<div class="right">
+    <div class="top">
+        <div class="login">
+            <div class="login-tip">客服<span style="color:red;font-weight:600"><?php echo $this->_login['name'];?></span>于<?php echo date('Y年m月d日 h时i分',$this->_login['ltime']);?>登录</div>
+            <input type="button" class="btn" onclick="window.location='./index.php?do=login-logout'" name="loginout" value="退出" />
+            <!--#include virtual="./tpl/top.shtml" -->
+        </div>
+    </div>
+    <div class="main">
+        <div class="search">
+            <form method="get" action="./index.php">
+            输入主播ID/昵称/用户名/邮箱 查询<input class="input" type="text" name="k" value="<?php echo isset($k)?$k:null; ?>"/>
+            <input type="hidden" name="do" value="room-status"/>
+            <input type="submit" value="查询" id="sure-btn" />
+            </form>
+        </div>
+     
+        <table>
+            <thead>
+                <tr>
+                    <td>主播ID</td>
+                    <td>主播昵称</td>
+                    <td>主播类型</td>
+                    <td>主播等级</td>
+                    <td>房间类型</td>
+                    <td>目前状态</td>
+                    <td>最后登录</td>
+                    <td>最后直播</td>
+                    <td>累积直播(分钟)</td>
+                    <td>修改时间</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            <?php
+            if(!$users || count($users)<1){
+            exit('<tr><td colspan="10" style="color:#ff0000">没有搜索到你要查找的信息！</td></tr>');
+            }
+
+            foreach($users as $u){?>
+                    <tr>
+                        <td><?php echo $u['uid']?></td>
+                        <td><?php echo $u['nickname']?:$u['username']?></td>
+                        <td><?php echo $this->config['host_type'][$u['lv_type']]?></td>
+                        <td><?php echo $u['lv_exp']?></td>
+                        <td><table>
+                            <tr>
+                                <?php
+                                $roomStatus = $this->_getRoomStatus($u['uid'], 'tid');
+                                foreach($this->_getRoomType() as $room){
+                                    if($roomStatus[$u['uid']][$room['id']]['status']){
+                                        echo '<td width="15%">'. $room['type'] .'</td>';
+                                    }else{
+                                        echo '<td width="15%"></td>';
+                                    }
+                                }
+                                ?>
+                                <td><a id="<?php echo $u['uid'];?>" username="<?php echo $u['nickname']?:$u['username']?>" class="modify_room" href="#">修改</a></td>
+                            </tr>
+                            </table>
+                        </td>
+                        <td><?php echo $this->_getUserOnlineStatus($u['uid']);?></td>
+                        <td><?php echo $u['logined']?></td>
+                        <td><?php echo $this->_getLastLiveTime($u['uid']);?></td>
+                        <td><?php echo $this->_getTotalLiveTime($u['uid']);?></td>
+                        <td><?php echo $this->_getFormatLastModifyTime($u['uid'])?></td>
+                    </tr>
+            <?php }?>
+            </tbody>
+        </table>
+        <div class="page">
+            <?php if(isset($data['pages'])&&!empty($data['pages'])){ echo $data['pages'];}?>
+            <input type="hidden" value="<?php echo  $data['page_nums'];?>" name="muji_nums" id="muji_nums"/>
+        </div>
+        
+        <div style="clear:both"></div>
+
+    <div class="search" id="room-console" style="display: none;">
+        <table  style="font-size: 14px; line-height: 30px; text-align:left;" class="d-dialog-table">
+            <tr><td align="center" colspan="4" id="ajax-user-info">主播ID：<b id="getUid">123 </b>, 主播昵称：<b id="getUserName"></b></td></tr>
+            <?php foreach ($this->_getRoomType() as $room) {?>
+            <tr>
+                <td tid="<?php echo $room['id'];?>"><?php echo $room['type'];?></td>
+                <td align="left"><input class="rooms-radio" type="radio" id="room-<?php echo $room['id'];?>" name="<?php echo $room['id']?>" value="1" />开启</td>
+                <td align="left"><input class="rooms-radio" type="radio" id="room-<?php echo $room['id'];?>" name="<?php echo $room['id']?>" value="0" checked="checked" />关闭</td>
+                <?php if($room['id']==3 || $room['id']==4){?><td><button type="button" i-id="ok" autofocus="" class="ui-dialog-autofocus search-btn">查询</button></td><?php }else{?><td></td><?php }?>
+            </tr>
+            <?php if($room['id']==2){?><tr><td>当前密码</td><td align="left" colspan="3"><input type="text"  maxlength="22" id="room-pwd" name="pwd" value="" /></td></tr><?php }?>
+            <?php }?>
+        </table>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    $(function() {
+        $(".modify_room").click(function() {
+            var td = $(this).closest("td");
+            var uid = $(this).attr('id');
+            var username = $(this).attr('username');
+            var check_tags = td.find("[name='tags']").val();
+            //check_tags = check_tags.split(',');
+            var html = $("#room-console").html();
+            var data = {};
+
+            var d = dialog({
+                id: 'modify_room',
+                title: uid+' 房间类型编辑',
+                content: html,
+                width: 500,
+                height: 300,
+                okValue: '确定',
+                onshow: function() {
+                    var dl = $('.ui-dialog');
+                    dl.find('#getUid').text(uid);
+                    dl.find('#getUserName').text(username);
+                    $.getJSON('/index.php?do=room-ajaxgetstatus',{'uid':uid}, function(json){
+                        $.each(json, function(i,v){
+                            if(json[i].status==1){
+                                dl.find("#room-"+json[i].tid).attr("checked","checked");
+                                if(json[i].tid==2){ //判断密码房间
+                                    dl.find('#room-pwd').val(json[i].pwd);
+                                }
+                            }
+                        });
+                    });
+
+
+
+                    $('.ui-dialog').find(".search-btn").click(function(){
+                                var $this = $(this);
+                                var ptd = $this.parent().siblings("td").eq(0);
+                                dialog({
+                                        id: 'ajaxiframe',
+                                        title: ptd.text(),
+                                        url: '/index.php?do=room-dialoglist&tid='+ptd.attr('tid')+'&uid='+uid,
+                                        //quickClose: true,
+                                        onshow: function () {
+                                            console.log('onshow');
+                                        },
+                                        oniframeload: function () {
+                                            console.log('oniframeload');
+                                        },
+                                        onclose: function () {
+                                            if (this.returnValue) {
+                                                //$('#value').html(this.returnValue);
+                                            }
+                                            console.log('onclose');
+                                        },
+                                        onremove: function () {
+                                            console.log('onremove');
+                                        }
+                                    }).show();
+                        return false;
+                        });
+
+                },
+
+                ok: function() {
+                    var  host_pwd = $('.ui-dialog').find('#room-pwd').val();
+                    if( (host_pwd.length<6 || host_pwd.length > 22) && $('.ui-dialog').find("input[type=radio]").eq(2).is(":checked") ){
+                        alert("密码长度6-22位");return false;
+                    }
+                    var rooms = $(".ui-dialog .rooms-radio:checked");
+                    var data = {},
+                        dataState = 0;
+                    rooms.each(function(){
+                        data[$(this).attr("name")] = $(this).val();
+                        if($(this).val() == "1"){
+                            dataState = 1;
+                        }
+                    });
+
+                    if(dataState == 0){
+                        //return;
+                    }
+                    //alert(JSON.stringify(rooms));
+                    var m = dialog({
+                        id: 'showmessage',
+                        width: 100,
+                        height: 100
+                    });
+                    m.addEventListener('close', function() {
+                        var t = dialog({
+                            content: m.returnValue,
+                            ok: function() {
+                                location.reload();
+                            }
+                        });
+                        t.show();
+                    });
+                    m.showModal();
+                    
+                    $.post('./index.php?do=room-ajaxPost', {
+                        uid: uid,
+                        data: data,
+                        pwd : $('.ui-dialog').find('#room-pwd').val()
+                    }, function(msg) {
+                        m.close(msg);
+                    }, "json");
+                },
+                cancelValue: '取消',
+                cancel: function() {},
+            });
+            d.showModal();
+        });
+
+
+//        $('.ui-dialog').find(".search-btn").click(function(){
+//            alert('aaa');
+//        });
+
+
+
+    });
+
+
+
+</script>
+</html>

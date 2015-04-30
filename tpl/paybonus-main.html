@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--#include virtual="./tpl/header.shtml"-->
+
+    <link rel="stylesheet" href="js/artDialogV6/css/ui-dialog.css">
+    <script language="javascript" type="text/javascript" src="js/artDialogV6/dist/dialog-min.js"></script>
+    <style type="text/css">
+        div.right  div.main .col{width:250px;float:left;}
+        .ui-dialog input{height: 24px;width: 190px;}
+    </style>
+</head>
+
+<body>
+<!--#include virtual="./tpl/menu.php" -->
+<div class="right">
+    <div class="top">
+        <div class="login">
+            <div class="login-tip">客服<span style="color:red;font-weight:600"><?php echo $this->_login['name'];?></span>于<?php echo date('Y年m月d日 h时i分',$this->_login['ltime']);?>登录</div>
+            <input type="button" class="btn" onclick="window.location='./index.php?do=login-logout'" name="loginout" value="退出" />
+            <!--#include virtual="./tpl/top.shtml" -->
+        </div>
+    </div>
+    <div class="main">
+        <div class="search">
+            <button id="addapply">添加申请</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <td>状态</td>
+                    <td>主播帐号</td>
+                    <td>主播id</td>
+                    <td>主播昵称</td>
+                    <td>所属家族</td>
+                    <td>充值金额</td>
+                    <td>充值类型</td>
+                    <td>备注</td>
+                    <td>充值员</td>
+                    <td>审核员</td>
+                    <td>申请时间</td>
+                    <td>审核时间</td>
+                </tr>
+            </thead>
+
+            <tbody>
+            <?php if(isset($data['list']) && !empty($data['list'])){
+                    foreach($data['list'] as $key => $val){?>
+                <tr>
+                    <td><?php if($val['pay_status'] == 0) echo '等待审核'; elseif($val['pay_status'] == 1) echo '审核通过'; else echo '审核失败';?></td>
+                    <td><?php echo $val['username']; ?></td>
+                    <td><?php echo $val['uid']; ?> </td>
+                    <td><?php echo $val['nickname'];?></td>
+                    <td><?php echo $val['family'];?></td>
+                    <td><?php echo $val['pay_money'];?></td>
+                    <td><?php if($val['pay_type'] == 1) echo "工资"; else echo '奖金';?></td>
+                    <td><?php if($val['note']) echo $val['note']; else echo '-';?></td>
+                    <td><?php echo $this->_login['name'];?></td>
+                    <td><?php echo $val['check'];?></td>
+                    <td><?php echo $val['ctime'];?></td>
+                    <td><?php echo $val['mtime'];?></td>
+                </tr>
+            <?php }}?>
+            </tbody>
+        </table>
+
+        <div class="page">
+               <?php if(isset($data['pages'])&&!empty($data['pages'])){ echo $data['pages'];}?>
+               <input type="hidden" value="<?php echo  $data['page_nums'];?>" name="muji_nums" id="muji_nums"/>
+        </div>
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="search" id="make" style="display: none;height: 500px">
+        <table  style="font-size: 18px; line-height: 55px; margin-left:30px;">
+            <tr>
+                <td>主播帐号:</td>
+                <td><input type="text" name="account" class="add_account" value=""/></td>
+            </tr>
+            <tr>
+                <td>主播ID:</td>
+                <td><input type="text" name="uid" class="add_uid" value=""/></td>
+            </tr>
+            <tr>
+                <td>充值金额:</td>
+                <td><input type="text" name="amount" class="add_amount" value=""/>元</td>
+            </tr>
+            <tr>
+                <td>充值类型:</td>
+                <td>
+                    <select class="select"  name="add_pay_type" id="add_pay_type">
+                        <option value="1" selected="selected">工资</option>
+                        <option value="2">奖金</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>备注:</td>
+                <td><input type="text" name="amount" class="add_message" value=""/></td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+<script type="text/javascript">
+    $(function() {
+    $("#addapply").click(function() {
+        var content = $("#make").html();
+        var d = dialog({
+            id: 'make-channel',
+            title: '工资和奖金申请',
+            content: content,
+            width: 450,
+            button: [
+                {
+                    value: '确认执行',
+                    callback: function () {
+                        //获取需要的值,执行
+                        var account = $('.ui-dialog').find('.add_account').val();
+                        var reuid = $(".ui-dialog").find('.add_uid').val();
+                        var amount = $(".ui-dialog").find('.add_amount').val();
+                        var paytype = $(".ui-dialog").find('#add_pay_type').val();
+                        var message = $(".ui-dialog").find('.add_message').val();
+                        $.ajax({
+                          url: "?do=payBonus-deal",
+                          dataType: 'json',
+                          type: 'POST',
+                          data:  {'account':account, 'uid':reuid, 'message':message, 'amount':amount, 'paytype':paytype},
+                          success: function(data1, textStatus){
+                            if(data1.code == 0) {
+                                alert('success!')
+                            } else {
+                                alert(data1.message)
+                            }
+                            location.reload();
+                            return true;
+		                  }
+                        });
+                    },
+                    autofocus: true
+                },
+                {
+                    value: '关闭'
+                },
+                {
+                    value: '重置',
+                    callback: function () {
+                        $('.ui-dialog').find('.add_account').val('');
+                        $(".ui-dialog").find('.add_uid').val('');
+                        $(".ui-dialog").find('.add_amount').val('');
+                        $(".ui-dialog").find('.add_message').val('');
+                        return false;
+                    }
+                }
+            ]
+        });
+        d.showModal();
+    });
+});
+
+</script>
+</body>
+</html>

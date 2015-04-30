@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <!--#include virtual="./tpl/header.shtml"-->
+    <link rel="stylesheet" href="js/artDialogV6/css/ui-dialog.css">
+    <script language="javascript" type="text/javascript" src="js/artDialogV6/dist/dialog-min.js"></script>
+
+    <style type="text/css">
+        div.right div.main .col{width:200px;float:left;}
+        input[type="reset"]{background-color:red;color:#fff;border:0px;padding: 5px 10px;border: 1px solid red;cursor: pointer;text-align: center;}
+    </style>
+</head>
+
+<body>
+<!--#include virtual="./tpl/menu.php" -->
+<div class="right">
+    <div class="top">
+        <div class="login">
+            <div class="login-tip">客服<span style="color:red;font-weight:600"><?php echo $this->_login['name'];?></span>于<?php echo date('Y年m月d日 h时i分',$this->_login['ltime']);?>登录</div>
+            <input type="button" class="btn" onclick="window.location='./index.php?do=login-logout'" name="loginout" value="退出" />
+            <!--#include virtual="./tpl/top.shtml" -->
+        </div>
+    </div>
+    <div class="main">
+        <form method="post">
+        <table class="twoCel">
+            <tbody>
+                <tr>
+                    <td>充值帐号(用户ID/帐号):</td>
+                    <td><input type="text" name="uid" value="<?php echo $_POST['uid'] ?>" id="uid" /><input type="button" name="checkUser" value="查询用户" id="sure-btn" onclick="checkuser()" /></td>
+                </tr>
+                 <tr>
+                   <td>充值金额:</td>
+                   <td><input type="text" name="plus_gold" value="<?php echo $_POST['plus_gold'] ?>" id="plus_gold" />元</td>
+                </tr>
+                <tr>
+                   <td>充值类型:</td>
+                    <td><select name="rechargetype" id="rechargetype">
+                        <?php foreach($data['rechargetype'] as $k=>$v){?>
+                            <option value="<?php echo $k ?>" <?php if($k==$_POST['rechargetype']) echo "selected" ?>><?php echo $v ?></option>
+                        <?php }?>
+                    </select></td>
+                </tr>
+                <tr>
+                   <td>备注:</td>
+                   <td><input type="text" name="remark" value="<?php echo $_POST['remark'] ?>" id="remark" />(必填)</td>
+                </tr>
+               <tr>
+                  <td>
+                  </td>
+                  <td>
+                    <input type="button" onclick="add()" value="确认充值"/>
+                    <input type="reset" name="doreset" value="重置申请"/>
+                  </td>
+              </tr>
+        </table>
+            </form>
+        <div style="clear:both"></div>
+    </div>
+</div>
+<script type="text/javascript">
+    function add() {
+        var width = 300;
+        var height = 150;
+        var content = "<p class='dialog-content'>确定充值吗？</p>";
+        width = 150;
+        height = 50;
+        var state = "申请充值";
+
+        var d = dialog({
+            id: 'del-admin',
+            content: content,
+            width: width,
+            height: height,
+            fixed: true,
+            okValue: '确定',
+            ok: function() {
+                var pw = '';
+                var m = dialog({
+                    id: 'showmessage',
+                    width: 50,
+                    height: 50
+                });
+                m.addEventListener('close',
+                        function() {
+                            var t = dialog({
+                                content: m.returnValue,
+                                ok: function() {
+                                    //location.reload();
+                                }
+                            });
+                            t.show();
+                        });
+                m.showModal();
+                var url = './index.php?do=Mrecharge-ajaxAddapply';
+                var param ={
+                    uid:$("#uid").val(),
+                    rechargetype:$("#rechargetype").val(),
+                    plus_gold:$("#plus_gold").val(),
+                    remark:$("#remark").val()
+                };
+                $.post(url, param,
+                        function(msg) {
+                            m.close(state + msg);
+                        });
+            },
+            cancelValue: '取消',
+            cancel: function() {},
+        });
+        d.showModal();
+    }
+
+    function checkuser() {
+        var uid = $("#uid").val();
+        if ($.trim(uid).length <= 0) {
+            alert('请输入用户ID/帐号');
+            return false;
+        }
+        $.get('./index.php?do=mrecharge-ajaxGetOne&id=' + uid, function (msg) {
+            if (msg == 2) {
+                alert("查无此用户，请重新输入");
+                return false;
+            } else {
+                if ($.trim(msg).length <= 0) {
+                    alert("请求出错");
+                    return false;
+                }
+                var str = "<table class='twoCel'><thead><tr><td>用户ID</td><td>用户昵称</td><td>用户账号</td><td>用户等级</td></tr></thead><tr><td>" + msg.uid + "</td><td>" + msg.nickname + "</td><td>" + msg.username + "</td><td>" + msg.lv_rich + "</td></tr></table>";
+                var d = dialog({id: "vip-sutter", content: str, okValue: "确认", width: 500, height: 100, ok: function () {
+                }, cancelValue: '取消', cancel: function () {
+                }, });
+                d.showModal();
+            }
+        }, 'json');
+    }
+</script>
+</body>
+</html>
